@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Le réseau dans les navigateurs web</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { 
+        font-family: 'Droid Serif';
+        font-size: 8em;
+      }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+        margin: 0em;
+        padding: 0em;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      ul {
+        padding: 0em;
+        margin: 0em;
+      }
+      ul ul {
+        padding-left: 1em;
+        margin: 0em;
+      }
+
+      p, code, pre {
+        margin-top: 0em;
+        margin-bottom: 0em;
+        padding-top: 0em;
+        padding-bottom: 0em;
+      }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Le réseau dans les navigateurs web
+
+Paul Adenot, Mozilla Corporation, 2014
+
+---
+
+# Agenda
+
+1. Mozilla
+1. Introduction
+1. HTTP
+    1. En deux minutes
+    1. Les "verbes"
+    1. Les soucis
+1. Streaming HTTP
+    1. HTTP 206: Partial-Content
+    1. Live-stream
+    1. HLS
+    1. DASH
+    1. MSE !
+1. HTTP2
+    1. Pourquoi?
+    1. Origine
+    1. Différences
+    1. État d'implémentation
+1. WebRTC
+    1. P2P
+    1. SDP
+    1. ICE
+    1. STUN
+    1. TURN
+
+---
+
+# Mozilla
+
+- But non lucratif !
+- [Manifeste](https://www.mozilla.org/fr/about/manifesto/)
+- Firefox
+- Firefox OS
+- 1000 personnes tout compris dans le monde
+- Des dizaines de milliers de bénévoles !
+- Paul: `<audio>`, `<video>`, Web Audio API (implem + spec), WebRTC, etc.
+
+---
+
+# Introduction
+
+- Navigateur: un des logiciels les plus utilisé
+- Flash est mort (*trou* de sécu)
+- HTTP(80), HTTPS(443) principalement
+- Web: Liens + HTTP(S) + HTML/CSS/JS
+- Texte, images, video, audio, jeux, etc.
+- Une plateforme d'application sandboxé, capable de faire tourner des applications non fiables.
+
+---
+
+# HTTP: tout un tas de RFC illisibles
+
+- HTTP1.1: [RFC 2616](http://tools.ietf.org/html/rfc2616), mais récemment découpé: 
+    - Protocol, routage: [7230](http://tools.ietf.org/html/rfc7230),
+    - Sémantique, contenu: [7231](http://tools.ietf.org/html/rfc7231),
+    - Requêtes conditionelles: [7232](http://tools.ietf.org/html/rfc7232),
+    - Range-requests: [7233](http://tools.ietf.org/html/rfc7233),
+    - Caching: [7234](http://tools.ietf.org/html/rfc7234),
+    - Authentification: [7235](http://tools.ietf.org/html/rfc7235)
+- Et puis:
+    - [2817](http://tools.ietf.org/html/rfc2817): <strike>SSL</strike> *TLS*
+    - [5785](http://tools.ietf.org/html/rfc5785): URI
+    - [6585](http://tools.ietf.org/html/rfc6585): status codes
+
+---
+
+# HTTP en deux minutes: une requête et une réponse
+
+<span class=rotate>
+  Requête:
+</span>
+```
+GET /
+Host: paul.cx
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:36.0) Gecko/20100101 Firefox/36.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Connection: keep-alive
+If-Modified-Since: Thu, 03 Apr 2014 15:17:45 GMT
+Cache-Control: max-age=0
+```
+
+<span class=rotate>
+  Réponse
+</span>
+```
+HTTP/1.1 200 OK
+Server: nginx/1.4.6 (Ubuntu)
+Date: Wed, 05 Nov 2014 21:17:21 GMT
+Content-Type: text/html
+Content-Length: 4740
+Last-Modified: Thu, 03 Apr 2014 15:17:45 GMT
+Connection: keep-alive
+Vary: Accept-Encoding
+ETag: "533d7b99-1284"
+Accept-Ranges: bytes
+
+<blablabla> <le> <document>
+</blablabla> </le> </document>
+```
+
+---
+
+# Les _verbes_ HTTP
+- `OPTIONS`: qu'est-ce que tu sais faire?
+- `GET`: donne moi X !
+- `HEAD`: donne moi les headers pour X !
+- `POST`: prend ça!
+- `PUT`: prend ça et met le à l'URL X !
+- `DELETE`: efface X !
+
+- Mais aussi XHR long poll, WebSockets
+
+---
+
+# Les soucis
+
+- HTTP est trop gros
+- HTTP a trop d'options (pratiquement personne n'implémente tout)
+
+- Utilisation de TCP inadequate
+    - Taille de transfer, nombre d'objets
+    - Latence
+    - Head of line blocking
+
+???
+
+HTTP1: 60 pages
+HTTP1.1: 176 pages (trois ans plus tard)
+
+Assez dur de dire comment implémenter tout HTTP parce que définir "tout" est dur
+
+---
+
+# Taille de transfert, nombre de requêtes
+
+- TCP slow-start (certains trichent)
+- Nov. 2010: environ 702KB par page, 70 requêtes
+- Oct. 2014: environ 2MB par page, 100.6 requêtes
+
+---
+
+# Trucs pour limiter le nombre de requêtes
+
+- Concaténation
+- Minification
+- Image spriting
+- Image Inlining
+- Sharding sur plusieurs domaines pour faire des requêtes en parallele/enlever
+les cookies
+
+---
+
+# Latence
+
+- Au cours des années, bande passante: ↗, latence: →
+- Surtout sur mobile !
+- Le pipelining HTTP est une blague
+- Lenteur pour charger des pages (parce que beaucoup de round-trips)
+
+---
+
+# Head of line blocking
+
+- Le souci de la file d'attente de la machine qui vent des tickets de métro avec des touristes en heure de pointe
+- On ne peut pas changer de file une fois notre décision prise
+- "Créer une nouvelle file d'attente" est couteux
+- Désactivé par défaut dans Firefox et Chrome
+
+---
+
+# HTTP2
+
+Plusieurs buts:
+- Être moins sensible à des latences hautes
+- Rendre le pipelining moins inutile, fixer le head of line blocking
+- Arrêter d'avoir besoin de faire des hacks pour limiter le nombre de requêtes
+- Être rétrocompatible
+- Être standard, fait à l'IETF avec les gens/entreprises
+important&middot;e&middot;s
+- Construit sur SPDY/3, fait par Google
+
+???
+
+Quand HTTPbis a commencé, Google avait déployé SPDY dans Chrome + ses sites, et
+avait montré que ça marchait. Quelque sed plus tard, SPDY/3 -&gt; http2-draft-00
+
+---
+
+# HTTP2: Concepts
+
+- Même paradigme: le client envoie des requêtes, le serveur répond, sur TCP
+- http:// et https:// ne changent pas (ça serait un désastre pour migrer)
+- HTTP doit être _proxyfiable_ vers HTTP2, parce qu'il y a encore du vieux code partout
+- Enlever ou réduire les parties optionelles du protocol
+- Pas de version mineurs (soit compatible, soit pas compatible)
+
+---
+
+# HTTP2: Autres concepts
+- Principalement sur TLS (au moins dans les gros navigateurs)
+- Binaire! (pour séparer le framing et le protocole, mais c'est pas trop grave
+parce que de toute façon, c'est compressé)
+- Multiplexage des requêtes et entrelaçage des resources
+
+???
+
+Debugger des serveurs HTTP avec netcat, c'était bien, maintenant, on utilisera
+des outils
+
+--- 
+
+# HTTP2: Autres trucs pas mal
+
+- Compression moins vulnérable (à BREACH/CRIME): HPACK
+- Compression de headers
+- `RST_STREAM`: reset d'une connection
+- Server push: le serveur envoie une resource qu'il n'a pas demandé au client
+parce qu'il sait que le client en aura besoin bientôt
+- Système de window propre au protocol
+- ALTSVC (alternative service) pour faire du load-balancing
+
+---
+
+# HTTP2, en gros:
+
+- Du positif: moins de round-trips, plus de choses en parallèle, pas de blocages
+- Du moins positif, mais ça passe: plus compliqué à implémenter, nécessite plus d'outils pour debugger
+
+
+    </textarea>
+    <script src="remark-latest.min.js">
+    </script>
+    <script>
+window.onload = function () {
+      var slideshow = remark.create();
+}
+    </script>
+  </body>
+</html>
