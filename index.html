@@ -3,20 +3,80 @@
   <head>
     <title>Le réseau dans les navigateurs web</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <script src="remark-latest.min.js">
+    </script>
+    <script>
+    window.onload = function () {
+          var slideshow = remark.create();
+    }
+    </script>
+    <link href='http://fonts.googleapis.com/css?family=EB+Garamond' rel='stylesheet' type='text/css'>
     <style type="text/css">
-      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
-      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
-      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
-
-      body { 
-        font-family: 'Droid Serif';
-        font-size: 8em;
+      #ball-2 {
+        left: 5%;
+      animation-delay: 0.3s;
       }
-      h1, h2, h3 {
+
+.ball {
+  background: transparent;
+    border-radius: 50%;
+    width: 145px;
+    height: 150px;
+    position: absolute;
+    bottom: 0;
+    left: 80%;
+    
+    animation-name: bounceball;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-delay: 0;
+    animation-timing-function: ease-out;
+    
+    animation-name: bounceball;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-delay: 0;
+    
+    timing-function: ease-out;
+    
+    animation-play-state: running;
+    animation-fill-mode: none;
+}
+ @keyframes bounceball {
+    from { bottom: 0; height: 90px; }
+    10%  { bottom: 0; height: 160px; }
+    to   { bottom: 50%; }
+}
+
+      body {
+        font-family: 'EB Garamond', serif;
+        font-size: 8em;
+        background-color: black;
+        color: #444;
+      }
+
+      div.center.middle > h1 {
+        font-size: 3em;
+      }
+
+      h1 {
+        font-family: 'EB Garamond', serif;
+        font-weight: normal;
+        font-size: 1.1em;
+        margin: 0em;
+        padding: 0em;
+      }
+       h2, h3 {
         font-family: 'Yanone Kaffeesatz';
         font-weight: normal;
         margin: 0em;
         padding: 0em;
+      }
+      .rotate {
+        transform: rotate(270deg) translateY(-1200%);
+        transform-origin: right top 0px;
       }
       .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
       ul {
@@ -28,11 +88,28 @@
         margin: 0em;
       }
 
-      p, code, pre {
+      p.nomargin {
+        margin-top: 0em;
+        font0
+      }
+
+      p {
+        margin-top: 0.5em;
+        margin-bottom: 0em;
+        margin-left: 0em;
+      }
+
+      pre {
         margin-top: 0em;
         margin-bottom: 0em;
         padding-top: 0em;
         padding-bottom: 0em;
+        font-size: 0.5em;
+      }
+      .minicode {
+        overflow: scroll;
+        font-size: 32px;
+        height: 150px;
       }
     </style>
   </head>
@@ -45,33 +122,19 @@ class: center, middle
 
 Paul Adenot, Mozilla Corporation, 2014
 
+<img id=ball-1 class=ball src="http://cnet1.cbsistatic.com/hub/i/2011/03/16/c7675aa8-fdba-11e2-8c7c-d4ae52e62bcc/1264abab866fd3930a8b419d21d1cff1/Chrome-logo-2011-03-16.jpg"></img>
+<img id=ball-2 class=ball src="https://mozorg.cdn.mozilla.net/media/img/styleguide/identity/firefox/usage-logo.png?2013-06"></img> 
+
 ---
 
 # Agenda
 
-1. Mozilla
-1. Introduction
-1. HTTP
-    1. En deux minutes
-    1. Les "verbes"
-    1. Les soucis
-1. Streaming HTTP
-    1. HTTP 206: Partial-Content
-    1. Live-stream
-    1. HLS
-    1. DASH
-    1. MSE !
-1. HTTP2
-    1. Pourquoi?
-    1. Origine
-    1. Différences
-    1. État d'implémentation
-1. WebRTC
-    1. P2P
-    1. SDP
-    1. ICE
-    1. STUN
-    1. TURN
+- Mozilla
+- Introduction
+- HTTP
+- HTTP2
+- Streaming HTTP
+- WebRTC
 
 ---
 
@@ -84,21 +147,28 @@ Paul Adenot, Mozilla Corporation, 2014
 - 1000 personnes tout compris dans le monde
 - Des dizaines de milliers de bénévoles !
 - Paul: `<audio>`, `<video>`, Web Audio API (implem + spec), WebRTC, etc.
+- Présence à l'IETF, au W3C
 
 ---
 
 # Introduction
 
-- Navigateur: un des logiciels les plus utilisé
-- Flash est mort (*trou* de sécu)
-- HTTP(80), HTTPS(443) principalement
-- Web: Liens + HTTP(S) + HTML/CSS/JS
-- Texte, images, video, audio, jeux, etc.
-- Une plateforme d'application sandboxé, capable de faire tourner des applications non fiables.
+- Navigateur: un des logiciels les plus utilisé sur un ordinateur
+- Flash est mort (trou *gigantesque* de sécu)
+- Ports: HTTP(80), HTTPS(443) principalement
+- *Web*: Liens + HTTP(S) + HTML/CSS/JS + Web APIs
+- Texte, images, vidéos, audio, jeux, etc.
+- Une plateforme d'application sandboxée, capable de faire tourner des applications non fiables.
 
 ---
 
-# HTTP: tout un tas de RFC illisibles
+class: center, middle
+
+# HTTP
+
+---
+
+# HTTP: plein plein de RFC
 
 - HTTP1.1: [RFC 2616](http://tools.ietf.org/html/rfc2616), mais récemment découpé: 
     - Protocol, routage: [7230](http://tools.ietf.org/html/rfc7230),
@@ -114,11 +184,12 @@ Paul Adenot, Mozilla Corporation, 2014
 
 ---
 
-# HTTP en deux minutes: une requête et une réponse
+# HTTP en deux minutes
 
-<span class=rotate>
-  Requête:
-</span>
+<p class=nomargin>
+  Dans une socket TCP sur le port 80, envoyez:
+</p>
+
 ```
 GET /
 Host: paul.cx
@@ -131,9 +202,9 @@ If-Modified-Since: Thu, 03 Apr 2014 15:17:45 GMT
 Cache-Control: max-age=0
 ```
 
-<span class=rotate>
-  Réponse
-</span>
+<p class=nomargin>
+ Et vous receverez:
+</p>
 ```
 HTTP/1.1 200 OK
 Server: nginx/1.4.6 (Ubuntu)
@@ -145,22 +216,12 @@ Connection: keep-alive
 Vary: Accept-Encoding
 ETag: "533d7b99-1284"
 Accept-Ranges: bytes
-
+```
+<br>
+```
 <blablabla> <le> <document>
 </blablabla> </le> </document>
 ```
-
----
-
-# Les _verbes_ HTTP
-- `OPTIONS`: qu'est-ce que tu sais faire?
-- `GET`: donne moi X !
-- `HEAD`: donne moi les headers pour X !
-- `POST`: prend ça!
-- `PUT`: prend ça et met le à l'URL X !
-- `DELETE`: efface X !
-
-- Mais aussi XHR long poll, WebSockets
 
 ---
 
@@ -169,8 +230,8 @@ Accept-Ranges: bytes
 - HTTP est trop gros
 - HTTP a trop d'options (pratiquement personne n'implémente tout)
 
-- Utilisation de TCP inadequate
-    - Taille de transfer, nombre d'objets
+- HTTP est mal utilisé:
+    - Taille de transfers, nombre d'objets
     - Latence
     - Head of line blocking
 
@@ -183,7 +244,7 @@ Assez dur de dire comment implémenter tout HTTP parce que définir "tout" est d
 
 ---
 
-# Taille de transfert, nombre de requêtes
+# Trop souvent, trop gros
 
 - TCP slow-start (certains trichent)
 - Nov. 2010: environ 702KB par page, 70 requêtes
@@ -191,12 +252,12 @@ Assez dur de dire comment implémenter tout HTTP parce que définir "tout" est d
 
 ---
 
-# Trucs pour limiter le nombre de requêtes
+# Limiter le nombre de requêtes?
 
 - Concaténation
 - Minification
 - Image spriting
-- Image Inlining
+- Image inlining
 - Sharding sur plusieurs domaines pour faire des requêtes en parallele/enlever
 les cookies
 
@@ -204,7 +265,9 @@ les cookies
 
 # Latence
 
-- Au cours des années, bande passante: ↗, latence: →
+- Au cours des années
+    - Bande passante: ↗
+    - Latence: →
 - Surtout sur mobile !
 - Le pipelining HTTP est une blague
 - Lenteur pour charger des pages (parce que beaucoup de round-trips)
@@ -213,10 +276,18 @@ les cookies
 
 # Head of line blocking
 
-- Le souci de la file d'attente de la machine qui vent des tickets de métro avec des touristes en heure de pointe
+- Le souci de la file d'attente de la machine qui vent des tickets de métro avec
+des touristes en heure de pointe: tous les clients rapides sont bloqués par un
+client lent
 - On ne peut pas changer de file une fois notre décision prise
 - "Créer une nouvelle file d'attente" est couteux
 - Désactivé par défaut dans Firefox et Chrome
+
+---
+
+class: center, middle
+
+# HTTP2
 
 ---
 
@@ -224,7 +295,7 @@ les cookies
 
 Plusieurs buts:
 - Être moins sensible à des latences hautes
-- Rendre le pipelining moins inutile, fixer le head of line blocking
+- Rendre le pipelining _moins inutile_, fixer le head of line blocking
 - Arrêter d'avoir besoin de faire des hacks pour limiter le nombre de requêtes
 - Être rétrocompatible
 - Être standard, fait à l'IETF avec les gens/entreprises
@@ -278,14 +349,147 @@ parce qu'il sait que le client en aura besoin bientôt
 - Du positif: moins de round-trips, plus de choses en parallèle, pas de blocages
 - Du moins positif, mais ça passe: plus compliqué à implémenter, nécessite plus d'outils pour debugger
 
+---
+
+class: center, middle
+
+# Streaming media sur HTTP
+
+---
+
+# Streaming media HTTP
+
+- RTMP: flash, donc pas terrible
+- RTSP: un peu supporté par Firefox OS, c'est tout
+- Pour le reste, on se débrouille avec HTTP, 206 Partial-Content et une bonne
+dose de JavaScript
+
+---
+
+# Le streaming HTTP en deux minutes
+
+```html
+<video loop controls src="https://paul.cx/public/horseplay-2.webm">
+</video>
+
+<video controls>
+  <source src="https://paul.cx/public/horseplay-2.webm">
+  <source src="https://paul.cx/public/horseplay-2.mp4">
+</video>
+```
+
+<video loop controls src="https://paul.cx/public/horseplay-2.webm"
+style="max-width: 100%; margin: 0 auto;">
+</video>
+
+---
+
+# HTTP 206 Partial-Content
+
+- Un moyen de ne télécharger qu'une partie d'une resource: utile pour _seeker_
+- Très utile pour télécharger le header du fichier, puis l'index (à la fin, des
+fois), puis commencer à faire le décodage
+- Implémenté par virtuellement tous les serveurs Web de nos jours
+
+---
+
+# HTTP pour le live streaming
+
+- Le serveur pousse juste des données dans une socket
+- Le client est responsable de gérer les erreurs
+- Facile à implémenter, basique, solide
+- Un seul flux, pas de changement de qualité
+
+---
+
+# HLS - HTTP Live Streaming
+
+- Un truc à la Apple
+- iOS, Safari, Android Browser, Chrome for Android
+- Pas standard du tout _du tout_
+- On met quelque chose qui ressemble à une playlist m3u8 à la place de l'URL de
+la vidéo, avec différentes qualités, et hop
+
+```
+#EXT-X-VERSION:3
+#EXTM3U
+#EXT-X-TARGETDURATION:10
+#EXT-X-MEDIA-SEQUENCE:1
+#EXTINF:10,
+http://media.example.com/segment0.ts
+#EXTINF:10.0,
+http://media.example.com/segment1.ts
+#EXTINF:9.5,
+http://media.example.com/segment2.ts
+#EXT-X-ENDLIST
+```
+---
+
+# DASH - Dynamic Adaptative Streaming over HTTP
+
+- MPD (Media presentation description) au début:
+<div class=minicode>
+```xml
+<MPD xmlns="urn:mpeg:DASH:schema:MPD:2011" mediaPresentationDuration="PT0H3M1.63S" minBufferTime="PT1.5S" profiles="urn:mpeg:dash:profile:isoff-on-demand:2011"
+type="static">
+  <Period duration="PT0H3M1.63S" start="PT0S">
+    <AdaptationSet>
+      <ContentComponent contentType="video" id="1" />
+      <Representation bandwidth="4190760" codecs="avc1.640028" height="1080" id="1" mimeType="video/mp4" width="1920">
+        <BaseURL>car-20120827-89.mp4</BaseURL>
+        <SegmentBase indexRange="674-1149">
+          <Initialization range="0-673" />
+        </SegmentBase>
+      </Representation>
+            <Representation bandwidth="2073921" codecs="avc1.4d401f" height="720" id="2" mimeType="video/mp4" width="1280">
+        <BaseURL>car-20120827-88.mp4</BaseURL>
+        <SegmentBase indexRange="708-1183">
+          <Initialization range="0-707" />
+        </SegmentBase>
+      </Representation>
+          </AdaptationSet>
+  </Period>
+</MPD>
+```
+</small>
+- Le contenu est coupé en petit morceaux
+- Le client choisit lesquels prendre en fonction des conditions réseau
+- Standardisé par MPEG
+- _Oui mais non_
+
+---
+
+# MSE - Media Source Extension !
+
+- [Specification W3C](https://dvcs.w3.org/hg/html-media/raw-file/tip/media-source/media-source.html)
+- Découple le réseau du décodage/rendu: bas niveau
+- On télécharge les buffers qu'on veut (XHR) et on les ajoute dans une `<video>`
+(Qui dispose d'une `MediaSource`)
+- Implémentation de HLS &amp; DASH possible
+- Dans Chrome/IE11 et bientôt dans Firefox
+
+---
+
+# WebRTC
+
+---
+
+class: center, middle
+
+# Questions ?
+
+---
+
+# La fin
+
+- Paul Adenot
+- @<a href=https://twitter.com/padenot>padenot</a>
+- &lt;<a href=mailto:paul@paul.cx>paul@paul.cx</a>&gt;
+- <a href=http://daniel.haxx.se/http2/>http2 explained</a>
+
+---
+
 
     </textarea>
-    <script src="remark-latest.min.js">
-    </script>
-    <script>
-window.onload = function () {
-      var slideshow = remark.create();
-}
-    </script>
   </body>
 </html>
