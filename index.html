@@ -153,7 +153,7 @@ Paul Adenot, Mozilla Corporation, 2014
 
 # Introduction
 
-- Navigateur: un des logiciels les plus utilisé sur un ordinateur
+- Navigateur: un des logiciels les plus utilisés sur un ordinateur
 - Flash est mort (trou *gigantesque* de sécu)
 - Ports: HTTP(80), HTTPS(443) principalement
 - *Web*: Liens + HTTP(S) + HTML/CSS/JS + Web APIs
@@ -281,7 +281,7 @@ des touristes en heure de pointe: tous les clients rapides sont bloqués par un
 client lent
 - On ne peut pas changer de file une fois notre décision prise
 - "Créer une nouvelle file d'attente" est couteux
-- Désactivé par défaut dans Firefox et Chrome
+- Le pipelining est désactivé par défaut dans Firefox et Chrome
 
 ---
 
@@ -314,8 +314,8 @@ avait montré que ça marchait. Quelque sed plus tard, SPDY/3 -&gt; http2-draft-
 - Même paradigme: le client envoie des requêtes, le serveur répond, sur TCP
 - http:// et https:// ne changent pas (ça serait un désastre pour migrer)
 - HTTP doit être _proxyfiable_ vers HTTP2, parce qu'il y a encore du vieux code partout
-- Enlever ou réduire les parties optionelles du protocol
-- Pas de version mineurs (soit compatible, soit pas compatible)
+- Enlever ou réduire les parties optionelles du protocole
+- Pas de versions mineurs (soit compatible, soit pas compatible)
 
 ---
 
@@ -323,7 +323,7 @@ avait montré que ça marchait. Quelque sed plus tard, SPDY/3 -&gt; http2-draft-
 - Principalement sur TLS (au moins dans les gros navigateurs)
 - Binaire! (pour séparer le framing et le protocole, mais c'est pas trop grave
 parce que de toute façon, c'est compressé)
-- Multiplexage des requêtes et entrelaçage des resources
+- Multiplexage des requêtes (une seule connection TCP) et entrelaçage des resources (avec gestion des priorités)
 
 ???
 
@@ -471,6 +471,67 @@ type="static">
 ---
 
 # WebRTC
+
+- Communication Audio/Video/Données Peer2Peer directement dans le navigateur
+- Le _signaling_ est laissé à la charge de l'application
+- Aussi besoin d'un serveur pour les NAT et firewalls un peu trop méchants
+- Utilise des techniques classiques en VoIP
+
+---
+
+# WebRTC: architecture
+
+<img src=jsep.png style="max-width:100%;">
+
+---
+
+# WebRTC: Protocols
+
+- DTLS-SRTP: transport
+- STUN: session traversal utilities for NAT
+- TURN: traversal using relays around NAT
+- ICE: interactive connectivity establishement
+
+---
+
+# WebRTC: DTLS-SRTP
+
+- Utilisé pour faire transiter, en P2P, le flux video et audio, et les donnée
+- Datagram Transport Layer Security - Secure Real Time Protocol
+- Non fiable, basse latence, sécurisé
+- RFC3711
+
+---
+
+# WebRTC: STUN
+
+- Permet à un hôte de découvrir sa propre adresse IP publique lorsque qu'il est
+derrière un NAT
+- On envoie un message (souvent UDP) à un serveur publique en lui demandant notre IP publique
+- Lorsqu'on a notre adresse publique, on  s'en sert comme _candidat_ pour une
+connection P2P
+
+---
+
+# WebRTC: TURN
+
+- Traversal using relays around NAT
+- Quand les NAT sont trop méchants (NAT symétriques), TURN permet de contourner
+- Marche quel que soit le NAT, mais des fois le firewall bloque explicitement
+
+<img src=nat.png style="max-width:100%;">
+
+---
+
+# WebRTC: ICE
+
+- Interactive Connectivity Establishment
+- Permet de _classer_ tous les candidats (hosts, p2p, relayé) par priorité, et
+de les communiquer à l'autre hôte
+- Critères: latence, taille de paquets, etc.
+- Quand la communication est établie, ICE s'arrête: P2P complet
+
+IPv6 permet aussi de régler tout ces soucis, chaque machine ayant s(on|es) adresse !
 
 ---
 
